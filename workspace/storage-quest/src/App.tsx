@@ -72,58 +72,59 @@ export default function App() {
         </div>
       </div>
 
-      <div className="layout container">
-        <div style={{ display: 'grid', gap: 12 }}>
-          <QuickAdd />
-          <NewDefinitionForm />
-          <div className="panel">
-            <div className="section-title">Inventory</div>
-            <Inventory />
+      <DndContext
+        onDragStart={(e) => {
+          const data = e.active?.data?.current as any
+          setActiveItemId(data?.itemId || null)
+        }}
+        onDragEnd={(e) => {
+          const data = e.active?.data?.current as any
+          const itemId: string | undefined = data?.itemId
+          const overId = e.over?.id as string | undefined
+          setActiveItemId(null)
+          if (!itemId) return
+
+          if (!overId) return
+          if (overId === 'inventory') {
+            const loc = findItemLocation(itemId)
+            if (loc.type === 'slot') removeItemFromSlot(loc.unitId, loc.r, loc.c)
+            return
+          }
+
+          if (overId.startsWith('slot:')) {
+            const [, unitId, rStr, cStr] = overId.split(':')
+            const r = Number(rStr)
+            const c = Number(cStr)
+            if (!Number.isNaN(r) && !Number.isNaN(c)) {
+              placeItem(itemId, unitId, r, c)
+            }
+          }
+        }}
+      >
+        <div className="layout container">
+          <div style={{ display: 'grid', gap: 12 }}>
+            <QuickAdd />
+            <NewDefinitionForm />
+            <div className="panel">
+              <div className="section-title">Inventory</div>
+              <Inventory />
+            </div>
           </div>
-        </div>
 
-        <div className="panel">
-          <div className="section-title">Your storage units</div>
-          <div className="units-scroll">
-            <DndContext
-              onDragStart={(e) => {
-                const data = e.active?.data?.current as any
-                setActiveItemId(data?.itemId || null)
-              }}
-              onDragEnd={(e) => {
-                const data = e.active?.data?.current as any
-                const itemId: string | undefined = data?.itemId
-                const overId = e.over?.id as string | undefined
-                setActiveItemId(null)
-                if (!itemId) return
-
-                if (!overId) return
-                if (overId === 'inventory') {
-                  const loc = findItemLocation(itemId)
-                  if (loc.type === 'slot') removeItemFromSlot(loc.unitId, loc.r, loc.c)
-                  return
-                }
-
-                if (overId.startsWith('slot:')) {
-                  const [, unitId, rStr, cStr] = overId.split(':')
-                  const r = Number(rStr)
-                  const c = Number(cStr)
-                  if (!Number.isNaN(r) && !Number.isNaN(c)) {
-                    placeItem(itemId, unitId, r, c)
-                  }
-                }
-              }}
-            >
+          <div className="panel">
+            <div className="section-title">Your storage units</div>
+            <div className="units-scroll">
               <div className="units">
                 {unitIds.map(id => <UnitCard key={id} unitId={id} />)}
               </div>
-              <DragOverlay>
-                {activeItemId ? <DraggableItem itemId={activeItemId} /> : null}
-              </DragOverlay>
-            </DndContext>
+            </div>
           </div>
         </div>
-      </div>
+
+        <DragOverlay>
+          {activeItemId ? <DraggableItem itemId={activeItemId} /> : null}
+        </DragOverlay>
+      </DndContext>
     </div>
   )
 }
